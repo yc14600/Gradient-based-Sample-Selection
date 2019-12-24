@@ -226,7 +226,7 @@ class Net(nn.Module):
 
 
         ##HERE MEMORY IS EQUAL TO THE BATCH SIZE, this procedure is performed for every recieved batch
-        if self.mem_cnt == 100 :
+        if self.mem_cnt == self.n_memories :
             self.eval()
 
             if self.sampled_memory_data is not None and self.n_sampled_memories<=self.sampled_memory_data.size(0):#buffer is full
