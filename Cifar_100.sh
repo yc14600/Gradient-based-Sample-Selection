@@ -2,7 +2,7 @@
 
 
 results="./results/cifar100"
-CIFAR_100i="--n_layers 2 --n_hiddens 100 --data_path ./data/ --save_path $results --batch_size 10 --log_every 50 --samples_per_task 10000 --data_file cifar100.pt   --tasks_to_preserve 10"
+CIFAR_100i="--n_layers 2 --n_hiddens 100 --data_path ./data/ --save_path $results --batch_size 10 --log_every 10 --samples_per_task 10000 --data_file cifar100.pt   --tasks_to_preserve 10"
 
 mkdir $results
 MY_PYTHON="python"
@@ -23,7 +23,7 @@ $MY_PYTHON cifar10.py \
 
 cd ..
 
-nb_seeds=1
+nb_seeds=4
 seed=0
 while [ $seed -le $nb_seeds ]
 do
