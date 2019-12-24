@@ -9,6 +9,7 @@ parser.add_argument('--i', default='raw/cifar10.pt', help='input directory')
 parser.add_argument('--o', default='cifar10.pt', help='output file')
 parser.add_argument('--n_tasks', default=5, type=int, help='number of tasks')
 parser.add_argument('--seed', default=0, type=int, help='random seed')
+parser.add_argument('--tot_clss', default=10, type=int, help='number of total classes')
 args = parser.parse_args()
 
 torch.manual_seed(args.seed)
@@ -20,7 +21,7 @@ x_tr, y_tr, x_te, y_te = torch.load(os.path.join(args.i))
 x_tr = x_tr.float().view(x_tr.size(0), -1) / 255.0
 x_te = x_te.float().view(x_te.size(0), -1) / 255.0
 
-cpt = int(10 / args.n_tasks)
+cpt = int(args.tot_clss / args.n_tasks)
 
 for t in range(args.n_tasks):
     c1 = t * cpt

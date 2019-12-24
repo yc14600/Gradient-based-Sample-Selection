@@ -348,6 +348,7 @@ if __name__ == "__main__":
     model.fname = os.path.join(args.save_path,model.fname)
 
     if args.cuda:
+        print('use cuda')
         model.cuda()
     if args.shared_head:
         model.is_cifar=False
