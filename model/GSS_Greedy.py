@@ -11,6 +11,7 @@ import numpy as np
 import scipy as sp
 import scipy.sparse as spa
 from .common import MLP, ResNet18
+from utils.train_util import one_hot_encoder
 
 
 
@@ -81,7 +82,7 @@ class Net(nn.Module):
         else:
             self.net = MLP([n_inputs] + [nh] * nl + [n_outputs])
 
-        self.ce = nn.CrossEntropyLoss()
+        self.ce = nn.BCEWithLogitsLoss()#nn.CrossEntropyLoss()#
         self.n_outputs = n_outputs
 
         self.opt = optim.SGD(self.parameters(), args.lr)
@@ -127,7 +128,12 @@ class Net(nn.Module):
         self.old_task = -1
         self.mem_cnt = 0
 
-
+    def loss_func(self,x,y):
+        logits = self.forward(x)
+        targets = one_hot_encoder(y.numpy(),H=logits.size()[1])
+        targets = torch.from_numpy(targets)
+        loss = self.ce(logits, targets)
+        return loss
 
     def forward(self, x, t=0):
         # t is there to be used by the main caller
@@ -202,8 +208,7 @@ class Net(nn.Module):
 
             # now compute the grad on the current minibatch and perform update step on the newly recieved batch
             self.zero_grad()
-
-            loss = self.ce(self.forward(x), y)
+            loss = self.loss_func(x, y)
             loss.backward()
             this_grad = get_grad_vector(self.parameters, self.grad_dims).unsqueeze(0)
             self.opt.step()
@@ -215,8 +220,7 @@ class Net(nn.Module):
                 batch_x=self.sampled_memory_data[random_batch_inds]
                 batch_y = self.sampled_memory_labs[random_batch_inds]
                 self.zero_grad()
-
-                loss = self.ce(self.forward(batch_x), batch_y)
+                loss = self.loss_func(batch_x, batch_y)
                 loss.backward()
 
                 self.opt.step()
@@ -305,7 +309,8 @@ class Net(nn.Module):
             batch_y = self.sampled_memory_labs[random_batch_inds]
             b_index += 1
             self.zero_grad()
-            loss = self.ce(self.forward(batch_x), batch_y)
+            loss = self.loss_func(batch_x, batch_y)
+            #loss = self.ce(self.forward(batch_x), batch_y)
             loss.backward()
             self.mem_grads = add_memory_grad(self.parameters, self.mem_grads, self.grad_dims)
             if b_index * effective_batch_size >= self.sampled_memory_labs.size(0):
@@ -313,7 +318,7 @@ class Net(nn.Module):
                 break
 
         self.zero_grad()
-        loss = self.ce(self.forward(self.memory_data), self.memory_labs)
+        loss = self.loss_func(self.memory_data, self.memory_labs)
         loss.backward()
         this_grad = get_grad_vector(self.parameters, self.grad_dims).unsqueeze(0)
         batch_sim = max((self.cosine_similarity(self.mem_grads, this_grad)))
@@ -326,7 +331,7 @@ class Net(nn.Module):
 
         for x, y in zip(self.memory_data, self.memory_labs):
             self.zero_grad()
-            ptloss = self.ce(self.forward(x.unsqueeze(0)), y.unsqueeze(0))
+            ptloss = self.loss_func(x.unsqueeze(0), y.unsqueeze(0))
             ptloss.backward()
             # add the new grad to the memory grads and add it is cosine similarity
             this_grad = get_grad_vector(self.parameters, self.grad_dims).unsqueeze(0)
