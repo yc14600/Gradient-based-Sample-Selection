@@ -291,7 +291,7 @@ class Net(nn.Module):
 
 
 
-            self.print_taskids_stats()
+            #self.print_taskids_stats()
             self.mem_cnt = 0
             self.train()
 
