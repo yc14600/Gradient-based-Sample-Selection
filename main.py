@@ -12,6 +12,7 @@ import uuid
 import time
 import os
 import pdb
+import csv
 import numpy as np
 
 import torch
@@ -182,7 +183,8 @@ def life_experience(model, continuum, x_te, args):
     current_res_per_t=[]#per task accuracy up until the current task
     current_avg_acc_list=[]#avg accuracy on task seen so far
     current_task = 0
-    time_start = time.time()
+    time_spent = 0.
+    
 
     for (i, (x, t, y)) in enumerate(continuum):
         if t>args.tasks_to_preserve:
@@ -203,9 +205,12 @@ def life_experience(model, continuum, x_te, args):
         if args.cuda:
             v_x = v_x.cuda()
             v_y = v_y.cuda()
-
+            
+        time_start = time.time()
         model.train()
         model.observe(v_x, t, v_y)
+        time_end = time.time()
+        time_spent += time_end - time_start
 
     res_per_t, res_all,current_result,current_avg_acc = eval_tasks(model, x_te, args.tasks_to_preserve,args)
     res_on_mem=eval_on_memory(args)
@@ -215,8 +220,7 @@ def life_experience(model, continuum, x_te, args):
     current_avg_acc_list.append(current_avg_acc)
     result_all.append(res_all)
 
-    time_end = time.time()
-    time_spent = time_end - time_start
+
 
     return torch.Tensor(result_t), torch.Tensor(result_a),torch.Tensor(result_all),torch.Tensor(current_res_per_t),torch.Tensor(current_avg_acc_list),res_on_mem, time_spent
 
@@ -367,6 +371,10 @@ if __name__ == "__main__":
     one_liner = str(vars(args)) + ' # '
     one_liner += ' '.join(["%.3f" % stat for stat in stats])
     print(model.fname + ': ' + one_liner + ' # ' + str(spent_time))
+
+    with open(model.fname+'_eplapsed_time.csv','w') as f:
+        writer = csv.writer(f,delimiter=',')
+        writer.writerow([spent_time])
 
     # save all results in binary file
     torch.save((result_t, result_a, model.state_dict(),current_res_per_t,current_avg,
