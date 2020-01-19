@@ -82,7 +82,7 @@ class Net(nn.Module):
         else:
             self.net = MLP([n_inputs] + [nh] * nl + [n_outputs])
 
-        self.ce = nn.BCEWithLogitsLoss()#nn.CrossEntropyLoss()#
+        self.ce = nn.CrossEntropyLoss()#nn.BCEWithLogitsLoss()#
         self.n_outputs = n_outputs
 
         self.opt = optim.SGD(self.parameters(), args.lr)
@@ -128,10 +128,14 @@ class Net(nn.Module):
         self.old_task = -1
         self.mem_cnt = 0
 
-    def loss_func(self,x,y):
+    def loss_func(self,x,y,softmax=True):
         logits = self.forward(x)
-        targets = one_hot_encoder(y.numpy(),H=logits.size()[1])
-        targets = torch.from_numpy(targets)
+        if softmax:
+            targets = y
+        else:
+            targets = one_hot_encoder(y.numpy(),H=logits.size()[1])
+            targets = torch.from_numpy(targets)
+
         loss = self.ce(logits, targets)
         return loss
 
